@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pinho Law – WhatsApp Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Calibri','Segoe UI','Arial',sans-serif;font-size:12.5px;color:#222;background:#e8e8e8}
+
+.header{background:#075e54;color:#fff;border-bottom:2px solid #054d44;padding:10px 14px}
+.header-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:6px}
+.header h1{font-size:16px;font-weight:700;letter-spacing:.3px}
+.header h1 span{font-weight:400;opacity:.7}
+.header-sub{font-size:11px;opacity:.7;margin-top:2px}
+.header-right{font-size:10px;opacity:.7;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+
+.btn{padding:4px 12px;font-size:10.5px;font-weight:600;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;border-radius:2px;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.25)}
+.btn-primary{background:#25d366;border-color:#25d366;color:#fff}
+.btn-primary:hover{background:#1da851}
+
+.krow{display:flex;gap:0;border:1px solid #ccc;border-radius:3px;overflow:hidden;margin:10px 0}
+.krow>div{flex:1;padding:10px 14px;text-align:center;border-right:1px solid #eee;background:#fff}
+.krow>div:last-child{border-right:none}
+.krow .v{font-size:22px;font-weight:700;margin-bottom:2px}
+.krow .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#888}
+
+.tab-strip{display:flex;gap:0;padding:0 8px;background:#d4d4d4;border-bottom:1px solid #aaa;overflow-x:auto}
+.tab-strip button{padding:5px 16px;font-size:11.5px;font-weight:500;color:#555;background:#c8c8c8;border:1px solid #aaa;border-bottom:none;border-radius:3px 3px 0 0;cursor:pointer;margin-bottom:-1px;white-space:nowrap}
+.tab-strip button:hover{background:#ddd;color:#222}
+.tab-strip button.on{background:#fff;color:#000;font-weight:600;border-bottom-color:#fff;z-index:2;position:relative}
+
+.sheet{background:#fff;border:1px solid #aaa;border-top:none;padding:10px 12px 20px;display:none}
+.sheet.on{display:block}
+
+.section-header{font-size:12px;font-weight:600;margin:14px 0 6px;display:flex;align-items:center;gap:8px}
+.section-header .count{font-size:10px;font-weight:400;color:#888;background:#f0f0f0;padding:1px 6px;border-radius:8px}
+
+.xl{width:100%;border-collapse:collapse;font-size:11.5px}
+.xl th{background:#f0f0f0;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:#555;border:1px solid #ddd;padding:6px 8px;text-align:left;position:sticky;top:0;z-index:2;white-space:nowrap;cursor:pointer}
+.xl td{border:1px solid #eee;padding:5px 8px;vertical-align:top}
+.xl tbody tr:hover{background:#f7f9fc}
+.xl tbody tr:nth-child(odd){background:#fafafa}
+
+.tbl-wrap{max-height:500px;overflow:auto;border:1px solid #ccc;border-radius:2px}
+
+.ctrl-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.srch{font-size:11px;padding:4px 10px;border:1px solid #ccc;border-radius:2px;width:220px}
+.rc{font-size:10.5px;color:#888;padding:2px 8px;border:1px solid #ddd;border-radius:2px;background:#f8f8f8}
+
+.badge{display:inline-block;padding:1px 6px;font-size:10px;font-weight:600;border-radius:2px;white-space:nowrap}
+.badge-red{background:#ffc7ce;color:#9c0006}
+.badge-orange{background:#fce4cc;color:#974706}
+.badge-green{background:#c6efce;color:#006100}
+.badge-blue{background:#dce6f1;color:#1f4e79}
+.badge-gray{background:#e8e8e8;color:#888}
+.badge-wa{background:#25d366;color:#fff}
+
+.chat-card{border:1px solid #e0e0e0;border-radius:4px;padding:10px 12px;margin-bottom:6px;background:#fff;cursor:pointer;transition:border-color .15s}
+.chat-card:hover{border-color:#25d366}
+.chat-card .cc-name{font-weight:600;font-size:12px;color:#1a3a5c}
+.chat-card .cc-phone{font-size:10px;color:#888;margin-left:6px}
+.chat-card .cc-msg{font-size:11px;color:#555;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:600px}
+.chat-card .cc-meta{font-size:10px;color:#aaa;margin-top:4px;display:flex;gap:12px}
+.chat-card.urgent{border-left:3px solid #c0504d}
+.chat-card.warning{border-left:3px solid #e65100}
+.chat-card.ok{border-left:3px solid #25d366}
+
+.msg-bubble{max-width:70%;padding:6px 10px;border-radius:6px;margin-bottom:4px;font-size:11.5px;line-height:1.4}
+.msg-in{background:#fff;border:1px solid #e0e0e0;margin-right:auto}
+.msg-out{background:#dcf8c6;border:1px solid #b8e6a0;margin-left:auto}
+.msg-time{font-size:9px;color:#999;margin-top:2px;text-align:right}
+
+.msg-panel{display:none;position:fixed;top:0;right:0;bottom:0;width:420px;background:#ece5dd;border-left:2px solid #075e54;box-shadow:-4px 0 16px rgba(0,0,0,.12);z-index:200;overflow:hidden;flex-direction:column}
+.msg-panel.open{display:flex}
+.msg-panel-header{padding:10px 14px;background:#075e54;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.msg-panel-header h3{font-size:13px;font-weight:600}
+.msg-panel-body{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column}
+.msg-panel-close{font-size:18px;cursor:pointer;color:#fff;border:none;background:none;padding:0 4px}
+
+.account-card{border:1px solid #e0e0e0;border-radius:4px;padding:10px;background:#fff;text-align:center}
+.account-card .ac-name{font-weight:600;font-size:12px;color:#1a3a5c}
+.account-card .ac-phone{font-size:11px;color:#555;margin-top:2px}
+.account-card .ac-stats{display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:11px}
+
+.loading{text-align:center;padding:40px;color:#999;font-size:13px}
+.error{color:#c0504d}
+
+.footer{max-width:1400px;margin:4px auto 20px;padding:0 10px}
+.footer-inner{display:flex;justify-content:space-between;font-size:9px;color:#bbb;padding:5px 0;border-top:1px solid #ddd}
+
+@media print{body{background:#fff !important}.header,.tab-strip,.ctrl-bar,.msg-panel,.footer{display:none !important}.sheet{display:none !important;border:none !important}.sheet.on{display:block !important}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <h1>Pinho Law – WhatsApp Dashboard <span>|</span> <span id="header-date"></span></h1>
+      <div class="header-sub">WhatsApp communications across all firm accounts</div>
+    </div>
+    <div class="header-right">
+      <span id="header-updated">Last refreshed: —</span>
+      <div style="display:flex;gap:5px">
+        <button id="lang-toggle" class="btn" onclick="toggleLanguage()">PT</button>
+        <button class="btn btn-primary" onclick="loadDashboard()">Refresh Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div style="max-width:1400px;margin:0 auto;padding:0 10px">
+  <div class="krow" id="kpi-row">
+    <div><div class="v" style="color:#075e54" id="kpi-chats">—</div><div class="l">Total Chats</div></div>
+    <div><div class="v" style="color:#c0504d" id="kpi-unread">—</div><div class="l">Unread</div></div>
+    <div><div class="v" style="color:#e65100" id="kpi-unanswered">—</div><div class="l">Unanswered</div></div>
+    <div><div class="v" style="color:#075e54" id="kpi-accounts">—</div><div class="l">Active Accounts</div></div>
+  </div>
+
+  <!-- Account Cards -->
+  <div id="accounts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:10px"></div>
+</div>
+
+<!-- TABS -->
+<div style="max-width:1400px;margin:0 auto">
+  <div class="tab-strip">
+    <button class="on" onclick="switchTab('all',this)">All Accounts</button>
+    <button onclick="switchTab('immigration',this)">Immigration</button>
+    <button onclick="switchTab('financeiro',this)">Financeiro</button>
+  </div>
+
+  <!-- ALL ACCOUNTS -->
+  <div id="all" class="sheet on">
+
+    <!-- Unanswered Chats -->
+    <div class="section-header" style="color:#c0504d">Unanswered Chats <span class="count" id="unanswered-count">0</span></div>
+    <div id="unanswered-list"><div class="loading">Loading...</div></div>
+
+    <!-- Chat List -->
+    <div class="section-header" style="color:#075e54;margin-top:16px">All Chats <span class="count" id="chat-count">0</span></div>
+    <div class="ctrl-bar">
+      <input type="text" class="srch" id="chat-search" placeholder="Search chats..." oninput="filterChats()">
+      <span class="rc" id="chat-rc">Loading...</span>
+    </div>
+    <div class="tbl-wrap">
+      <table class="xl" id="chat-table">
+        <thead><tr>
+          <th onclick="sortChats(0)">Name</th>
+          <th onclick="sortChats(1)">Phone</th>
+          <th onclick="sortChats(2)">Last Message</th>
+          <th onclick="sortChats(3)">Last Activity</th>
+          <th onclick="sortChats(4)">Status</th>
+          <th onclick="sortChats(5)">Account</th>
+          <th onclick="sortChats(6)">Responsible</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Message Panel (slide-out) -->
+<div class="msg-panel" id="msgPanel">
+  <div class="msg-panel-header">
+    <h3 id="msg-panel-title">Chat</h3>
+    <button class="msg-panel-close" onclick="closeMessages()">&times;</button>
+  </div>
+  <div class="msg-panel-body" id="msg-panel-body">
+    <div class="loading">Loading messages...</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-inner">
+    <span>Pinho Law – WhatsApp Dashboard · Powered by TimelinesAI</span>
+    <span>Read-only · No message credits used</span>
+  </div>
+</div>
+
+<script>
+// ── Account mapping ──
+var ACCOUNTS = {
+  '14076402800@s.whatsapp.net': { name: 'Pinho Law (Main)', short: 'Main', color: '#075e54' },
+  '14073854144@s.whatsapp.net': { name: 'Immigration', short: 'Immigration', color: '#4472c4' },
+  '14074562726@s.whatsapp.net': { name: 'Financeiro', short: 'Financeiro', color: '#548235' },
+};
+var ACCOUNT_FILTERS = {
+  all: null,
+  immigration: '14073854144@s.whatsapp.net',
+  financeiro: '14074562726@s.whatsapp.net',
+};
+
+var _allChats = [];
+var _currentTab = 'all';
+var _sortCol = 3;
+var _sortAsc = false;
+
+// ── Tab switching ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.sheet').forEach(function(s) { s.style.display = 'none'; s.classList.remove('on'); });
+  document.querySelectorAll('.tab-strip button').forEach(function(b) { b.classList.remove('on'); });
+  var el = document.getElementById('all'); // All use same sheet, just filter
+  el.style.display = 'block'; el.classList.add('on');
+  btn.classList.add('on');
+  _currentTab = id;
+  renderChats();
+  renderUnanswered();
+}
+
+// ── Load dashboard ──
+async function loadDashboard() {
+  document.getElementById('header-updated').textContent = 'Loading...';
+
+  try {
+    // Fetch overview
+    var overviewRes = await fetch('/api/whatsapp/data?action=overview');
+    var overview = await overviewRes.json();
+    if (overview.error) throw new Error(overview.error);
+
+    // Update KPIs
+    document.getElementById('kpi-chats').textContent = overview.kpis.total_chats;
+    document.getElementById('kpi-accounts').textContent = overview.kpis.active_accounts + '/' + overview.kpis.total_accounts;
+
+    // Render account cards
+    renderAccountCards(overview.accounts, overview.accountStats);
+
+    // Fetch unanswered
+    var unansweredRes = await fetch('/api/whatsapp/data?action=unanswered');
+    var unansweredData = await unansweredRes.json();
+    document.getElementById('kpi-unanswered').textContent = unansweredData.total || 0;
+    if (unansweredData.total > 0) document.getElementById('kpi-unanswered').style.color = '#c0504d';
+
+    _unansweredChats = unansweredData.unanswered || [];
+    renderUnanswered();
+
+    // Fetch all chats
+    var chatsRes = await fetch('/api/whatsapp/data?action=chats');
+    var chatsData = await chatsRes.json();
+    _allChats = chatsData.data && chatsData.data.chats ? chatsData.data.chats : [];
+
+    // Count unread
+    var unread = _allChats.filter(function(c) { return !c.read; }).length;
+    document.getElementById('kpi-unread').textContent = unread;
+    if (unread > 0) document.getElementById('kpi-unread').style.color = '#c0504d';
+
+    renderChats();
+
+    // Update timestamp
+    var now = new Date();
+    var h = now.getHours(), m = now.getMinutes();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    document.getElementById('header-updated').textContent = 'Last refreshed: ' + now.toLocaleDateString() + ' ' + h + ':' + (m<10?'0':'') + m + ' ' + ampm;
+  } catch (err) {
+    console.error('Dashboard error:', err);
+    document.getElementById('header-updated').textContent = 'Error: ' + err.message;
+  }
+}
+
+// ── Render account cards ──
+function renderAccountCards(accounts, stats) {
+  var grid = document.getElementById('accounts-grid');
+  grid.innerHTML = '';
+  accounts.forEach(function(a) {
+    var s = stats[a.id] || { chats: 0, unread: 0 };
+    var statusBadge = a.status === 'active'
+      ? '<span class="badge badge-green">Active</span>'
+      : '<span class="badge badge-red">Disconnected</span>';
+    var card = document.createElement('div');
+    card.className = 'account-card';
+    card.innerHTML =
+      '<div class="ac-name">' + (a.account_name || a.phone) + '</div>' +
+      '<div class="ac-phone">' + a.phone + ' ' + statusBadge + '</div>' +
+      '<div class="ac-stats">' +
+        '<span><b>' + s.chats + '</b> chats</span>' +
+        '<span style="color:#c0504d"><b>' + s.unread + '</b> unread</span>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+
+// ── Render unanswered chats ──
+var _unansweredChats = [];
+function renderUnanswered() {
+  var container = document.getElementById('unanswered-list');
+  var filtered = _unansweredChats;
+
+  // Filter by tab
+  var accountFilter = ACCOUNT_FILTERS[_currentTab];
+  if (accountFilter) {
+    filtered = filtered.filter(function(c) { return c.whatsapp_account_id === accountFilter; });
+  }
+
+  document.getElementById('unanswered-count').textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:12px;color:#548235;font-size:11px">No unanswered chats — all caught up!</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.slice(0, 50).forEach(function(c) {
+    var urgency = c.wait_hours > 24 ? 'urgent' : (c.wait_hours > 4 ? 'warning' : 'ok');
+    var waitLabel = c.wait_hours > 24
+      ? Math.round(c.wait_hours / 24) + ' days'
+      : (c.wait_hours > 1 ? Math.round(c.wait_hours) + ' hrs' : Math.round(c.wait_hours * 60) + ' min');
+    var acctInfo = ACCOUNTS[c.whatsapp_account_id] || { short: '?' };
+
+    var card = document.createElement('div');
+    card.className = 'chat-card ' + urgency;
+    card.onclick = function() { openMessages(c.id, c.name || c.phone); };
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div><span class="cc-name">' + (c.name || 'No name') + '</span><span class="cc-phone">' + c.phone + '</span></div>' +
+        '<span class="badge badge-' + (urgency === 'urgent' ? 'red' : urgency === 'warning' ? 'orange' : 'green') + '">Waiting ' + waitLabel + '</span>' +
+      '</div>' +
+      '<div class="cc-meta">' +
+        '<span>' + acctInfo.short + '</span>' +
+        (c.responsible_name ? '<span>Assigned: ' + c.responsible_name + '</span>' : '') +
+        '<span>' + (c.last_message_timestamp || '') + '</span>' +
+      '</div>';
+    container.appendChild(card);
+  });
+}
+
+// ── Render chat table ──
+function renderChats() {
+  var filtered = _allChats;
+
+  // Filter by tab
+  var accountFilter = ACCOUNT_FILTERS[_currentTab];
+  if (accountFilter) {
+    filtered = filtered.filter(function(c) { return c.whatsapp_account_id === accountFilter; });
+  }
+
+  // Filter by search
+  var search = (document.getElementById('chat-search').value || '').toLowerCase();
+  if (search) {
+    filtered = filtered.filter(function(c) {
+      return ((c.name || '') + ' ' + (c.phone || '')).toLowerCase().indexOf(search) !== -1;
+    });
+  }
+
+  // Sort
+  filtered.sort(function(a, b) {
+    var av, bv;
+    switch(_sortCol) {
+      case 0: av = (a.name||'').toLowerCase(); bv = (b.name||'').toLowerCase(); break;
+      case 1: av = a.phone||''; bv = b.phone||''; break;
+      case 2: av = ''; bv = ''; break; // Can't sort by message preview
+      case 3: av = a.last_message_timestamp||''; bv = b.last_message_timestamp||''; break;
+      case 4: av = a.read?'z':'a'; bv = b.read?'z':'a'; break;
+      case 5: av = a.whatsapp_account_id||''; bv = b.whatsapp_account_id||''; break;
+      case 6: av = (a.responsible_name||'').toLowerCase(); bv = (b.responsible_name||'').toLowerCase(); break;
+      default: av=''; bv='';
+    }
+    var cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return _sortAsc ? cmp : -cmp;
+  });
+
+  document.getElementById('chat-count').textContent = filtered.length;
+  document.getElementById('chat-rc').textContent = filtered.length + ' chats';
+
+  var tbody = document.querySelector('#chat-table tbody');
+  tbody.innerHTML = '';
+  filtered.forEach(function(c) {
+    var acctInfo = ACCOUNTS[c.whatsapp_account_id] || { short: c.whatsapp_account_id, color: '#888' };
+    var statusBadge = c.read
+      ? '<span class="badge badge-gray">Read</span>'
+      : '<span class="badge badge-red">Unread</span>';
+    var tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = function() { openMessages(c.id, c.name || c.phone); };
+    tr.innerHTML =
+      '<td><b>' + (c.name || '—') + '</b></td>' +
+      '<td>' + (c.phone || '') + '</td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:#666">—</td>' +
+      '<td>' + (c.last_message_timestamp || '—') + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td><span class="badge" style="background:' + acctInfo.color + ';color:#fff">' + acctInfo.short + '</span></td>' +
+      '<td>' + (c.responsible_name || '—') + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function filterChats() { renderChats(); }
+function sortChats(col) {
+  if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
+  renderChats();
+}
+
+// ── Message panel ──
+async function openMessages(chatId, chatName) {
+  var panel = document.getElementById('msgPanel');
+  var body = document.getElementById('msg-panel-body');
+  var title = document.getElementById('msg-panel-title');
+  panel.classList.add('open');
+  title.textContent = chatName || 'Chat';
+  body.innerHTML = '<div class="loading">Loading messages...</div>';
+
+  try {
+    var res = await fetch('/api/whatsapp/data?action=messages&chat_id=' + chatId);
+    var data = await res.json();
+    var msgs = data.data && data.data.messages ? data.data.messages : [];
+
+    if (msgs.length === 0) {
+      body.innerHTML = '<div class="loading">No messages found</div>';
+      return;
+    }
+
+    // Reverse to show oldest first
+    msgs.reverse();
+
+    body.innerHTML = '';
+    msgs.forEach(function(m) {
+      var bubble = document.createElement('div');
+      bubble.className = 'msg-bubble ' + (m.from_me ? 'msg-out' : 'msg-in');
+      var text = m.text || m.type || '[media]';
+      if (text.length > 500) text = text.substring(0, 500) + '...';
+      bubble.innerHTML = '<div>' + escapeHtml(text) + '</div>' +
+        '<div class="msg-time">' + (m.timestamp || '') + '</div>';
+      body.appendChild(bubble);
+    });
+
+    // Scroll to bottom
+    body.scrollTop = body.scrollHeight;
+  } catch (err) {
+    body.innerHTML = '<div class="loading error">Error: ' + err.message + '</div>';
+  }
+}
+
+function closeMessages() {
+  document.getElementById('msgPanel').classList.remove('open');
+}
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ── Language toggle ──
+var _lang = localStorage.getItem('wa_dashboard_lang') || 'en';
+function toggleLanguage() {
+  _lang = _lang === 'en' ? 'pt' : 'en';
+  localStorage.setItem('wa_dashboard_lang', _lang);
+  document.getElementById('lang-toggle').textContent = _lang === 'en' ? 'PT' : 'EN';
+  // TODO: full translation dictionary
+}
+
+// ── Init ──
+window.addEventListener('DOMContentLoaded', function() {
+  // Set date
+  var now = new Date();
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('header-date').textContent = months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+
+  document.getElementById('lang-toggle').textContent = _lang === 'en' ? 'PT' : 'EN';
+
+  // Load data
+  loadDashboard();
+});
+</script>
+</body>
+</html>
