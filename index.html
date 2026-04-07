@@ -140,6 +140,69 @@ body{font-family:'Calibri','Segoe UI','Arial',sans-serif;font-size:12.5px;color:
     <div class="section-header" style="color:#c0504d">Unanswered Chats <span class="count" id="unanswered-count">0</span></div>
     <div id="unanswered-list"><div class="loading">Loading...</div></div>
 
+    <!-- Analytics Section -->
+    <div id="analytics-section" style="display:none;margin-top:16px">
+      <div class="section-header" style="color:#1a3a5c">Analytics <span class="count" id="analytics-meta"></span>
+        <button class="btn" onclick="loadAnalytics()" style="font-size:10px;padding:2px 8px;margin-left:8px;color:#075e54;border-color:#075e54;background:#fff">Load Analytics</button>
+      </div>
+
+      <!-- Analytics KPIs -->
+      <div class="krow" id="analytics-kpis" style="display:none">
+        <div><div class="v" style="color:#075e54;font-size:18px" id="ak-volume">—</div><div class="l">Messages</div></div>
+        <div><div class="v" style="color:#4472c4;font-size:18px" id="ak-avg">—</div><div class="l">Avg/Day</div></div>
+        <div><div class="v" style="color:#e65100;font-size:18px" id="ak-response">—</div><div class="l">Median Response</div></div>
+        <div><div class="v" style="color:#548235;font-size:18px" id="ak-under5">—</div><div class="l">Under 5 Min</div></div>
+        <div><div class="v" style="color:#4472c4;font-size:18px" id="ak-peak">—</div><div class="l">Peak Hour</div></div>
+        <div><div class="v" style="color:#7f6084;font-size:18px" id="ak-lang">—</div><div class="l">Portuguese</div></div>
+      </div>
+
+      <!-- Analytics Grid -->
+      <div id="analytics-grid" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+
+        <!-- Response Time -->
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:#e65100;margin-bottom:8px">Response Time Distribution</div>
+          <div id="rt-bars" style="display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+
+        <!-- Sentiment -->
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:#1a3a5c;margin-bottom:8px">Sentiment Analysis</div>
+          <div id="sentiment-bars" style="margin-bottom:8px"></div>
+          <div id="sentiment-samples" style="font-size:10.5px;color:#555"></div>
+        </div>
+
+        <!-- Topics -->
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:#075e54;margin-bottom:8px">Common Topics (Client Messages)</div>
+          <div id="topic-bars"></div>
+        </div>
+
+        <!-- Language -->
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:#7f6084;margin-bottom:8px">Language Distribution</div>
+          <div id="lang-chart"></div>
+        </div>
+
+        <!-- Conversion Signals (full width) -->
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff;grid-column:1/-1">
+          <div style="font-size:12px;font-weight:600;color:#548235;margin-bottom:8px">Conversion Signals (Potential New Business) <span class="count" id="conv-count">0</span></div>
+          <div id="conv-list"></div>
+        </div>
+
+        <!-- Top Clients + Ghost Clients -->
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:#4472c4;margin-bottom:8px">Most Active Clients</div>
+          <div id="top-clients"></div>
+        </div>
+
+        <div style="border:1px solid #e0e0e0;border-radius:4px;padding:12px;background:#fff">
+          <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:8px">Ghost Clients (No Reply 3+ Days)</div>
+          <div id="ghost-clients"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Chat List -->
     <div class="section-header" style="color:#075e54;margin-top:16px">All Chats <span class="count" id="chat-count">0</span></div>
     <div class="ctrl-bar">
@@ -438,6 +501,147 @@ function closeMessages() {
   document.getElementById('msgPanel').classList.remove('open');
 }
 
+// ── Analytics ──
+async function loadAnalytics() {
+  document.getElementById('analytics-kpis').style.display = 'flex';
+  document.getElementById('analytics-grid').style.display = 'grid';
+  document.getElementById('analytics-meta').textContent = 'Loading...';
+
+  try {
+    var res = await fetch('/api/whatsapp/data?action=analytics');
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    var v = data.volume;
+    var rt = data.response_time;
+    var lang = data.language;
+    var sent = data.sentiment;
+
+    // KPIs
+    document.getElementById('ak-volume').textContent = v.total;
+    document.getElementById('ak-avg').textContent = v.avg_per_day;
+    document.getElementById('ak-response').textContent = rt.median_min + ' min';
+    document.getElementById('ak-under5').textContent = rt.pct_under_5 + '%';
+    document.getElementById('ak-peak').textContent = v.peak_hour + ':00';
+    var langTotal = lang.portuguese + lang.english + lang.mixed || 1;
+    document.getElementById('ak-lang').textContent = Math.round(lang.portuguese / langTotal * 100) + '%';
+    document.getElementById('analytics-meta').textContent = data.meta.messages_analyzed + ' msgs / ' + data.meta.chats_sampled + ' chats';
+
+    // Response Time bars
+    var rtEl = document.getElementById('rt-bars');
+    var rtData = [
+      { label: 'Under 5 min', value: rt.under_5min, pct: rt.pct_under_5, color: '#25d366' },
+      { label: 'Under 30 min', value: rt.under_30min, pct: rt.pct_under_30, color: '#4caf50' },
+      { label: 'Under 1 hour', value: rt.under_1hr, pct: rt.count > 0 ? Math.round(rt.under_1hr/rt.count*100) : 0, color: '#ff9800' },
+      { label: 'Over 4 hours', value: rt.over_4hr, pct: rt.count > 0 ? Math.round(rt.over_4hr/rt.count*100) : 0, color: '#f44336' },
+    ];
+    rtEl.innerHTML = rtData.map(function(r) {
+      return '<div style="display:flex;align-items:center;gap:8px;font-size:11px">' +
+        '<span style="min-width:90px;color:#555">' + r.label + '</span>' +
+        '<div style="flex:1;background:#f0f0f0;height:16px;border-radius:2px;overflow:hidden">' +
+          '<div style="height:100%;width:' + r.pct + '%;background:' + r.color + ';border-radius:2px"></div>' +
+        '</div>' +
+        '<span style="min-width:50px;text-align:right;font-weight:600">' + r.value + ' (' + r.pct + '%)</span>' +
+      '</div>';
+    }).join('');
+    rtEl.innerHTML += '<div style="font-size:10px;color:#888;margin-top:6px">Avg: ' + rt.average_min + ' min | Median: ' + rt.median_min + ' min | Slowest: ' + Math.round(rt.slowest_min/60*10)/10 + ' hrs</div>';
+
+    // Sentiment
+    var sentTotal = sent.positive + sent.neutral + sent.negative || 1;
+    var sentEl = document.getElementById('sentiment-bars');
+    sentEl.innerHTML =
+      '<div style="display:flex;height:24px;border-radius:3px;overflow:hidden;font-size:10px;font-weight:600;text-align:center;line-height:24px">' +
+        '<div style="width:' + (sent.positive/sentTotal*100) + '%;background:#c6efce;color:#006100">' + (sent.positive > 0 ? Math.round(sent.positive/sentTotal*100) + '%' : '') + '</div>' +
+        '<div style="width:' + (sent.neutral/sentTotal*100) + '%;background:#e8e8e8;color:#555">' + Math.round(sent.neutral/sentTotal*100) + '%</div>' +
+        '<div style="width:' + (sent.negative/sentTotal*100) + '%;background:#ffc7ce;color:#9c0006">' + (sent.negative > 0 ? Math.round(sent.negative/sentTotal*100) + '%' : '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-top:2px">' +
+        '<span>Positive: ' + sent.positive + '</span><span>Neutral: ' + sent.neutral + '</span><span>Negative: ' + sent.negative + '</span>' +
+      '</div>';
+
+    var samplesEl = document.getElementById('sentiment-samples');
+    var html = '';
+    if (sent.positive_samples.length > 0) {
+      html += '<div style="margin-top:6px"><b style="color:#006100">Recent positive:</b></div>';
+      sent.positive_samples.slice(0, 3).forEach(function(s) {
+        html += '<div style="padding:2px 0;border-bottom:1px solid #f0f0f0">"' + escapeHtml(s.text) + '" <span style="color:#aaa">— ' + s.chat + '</span></div>';
+      });
+    }
+    if (sent.negative_samples.length > 0) {
+      html += '<div style="margin-top:6px"><b style="color:#9c0006">Negative:</b></div>';
+      sent.negative_samples.forEach(function(s) {
+        html += '<div style="padding:2px 0;border-bottom:1px solid #f0f0f0">"' + escapeHtml(s.text) + '" <span style="color:#aaa">— ' + s.chat + '</span></div>';
+      });
+    }
+    samplesEl.innerHTML = html;
+
+    // Topics
+    var topicEl = document.getElementById('topic-bars');
+    var maxTopic = Math.max.apply(null, Object.values(data.topics).concat([1]));
+    topicEl.innerHTML = Object.entries(data.topics)
+      .sort(function(a, b) { return b[1] - a[1]; })
+      .filter(function(t) { return t[1] > 0; })
+      .map(function(t) {
+        var pct = Math.round(t[1] / maxTopic * 100);
+        return '<div style="display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:3px">' +
+          '<span style="min-width:90px;color:#555">' + t[0] + '</span>' +
+          '<div style="flex:1;background:#f0f0f0;height:14px;border-radius:2px;overflow:hidden">' +
+            '<div style="height:100%;width:' + pct + '%;background:#075e54;border-radius:2px"></div>' +
+          '</div>' +
+          '<span style="min-width:30px;text-align:right;font-weight:600">' + t[1] + '</span>' +
+        '</div>';
+      }).join('');
+
+    // Language chart
+    var langEl = document.getElementById('lang-chart');
+    langEl.innerHTML =
+      '<div style="display:flex;height:30px;border-radius:3px;overflow:hidden;font-size:11px;font-weight:600;text-align:center;line-height:30px">' +
+        '<div style="width:' + (lang.portuguese/langTotal*100) + '%;background:#009c3b;color:#fff">' + Math.round(lang.portuguese/langTotal*100) + '% PT</div>' +
+        '<div style="width:' + (lang.english/langTotal*100) + '%;background:#002776;color:#fff">' + (lang.english > 0 ? Math.round(lang.english/langTotal*100) + '% EN' : '') + '</div>' +
+        '<div style="width:' + (lang.mixed/langTotal*100) + '%;background:#ffdf00;color:#333">' + (lang.mixed > 0 ? Math.round(lang.mixed/langTotal*100) + '%' : '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-top:2px">' +
+        '<span>Portuguese: ' + lang.portuguese + '</span><span>English: ' + lang.english + '</span><span>Mixed: ' + lang.mixed + '</span>' +
+      '</div>';
+
+    // Conversion signals
+    document.getElementById('conv-count').textContent = data.conversions.length;
+    var convEl = document.getElementById('conv-list');
+    if (data.conversions.length === 0) {
+      convEl.innerHTML = '<div style="color:#888;font-size:11px">No conversion signals detected in this period</div>';
+    } else {
+      convEl.innerHTML = data.conversions.map(function(c) {
+        return '<div class="chat-card ok" style="padding:6px 10px;margin-bottom:4px">' +
+          '<div style="display:flex;justify-content:space-between"><b style="font-size:11px">' + escapeHtml(c.chat) + '</b><span style="font-size:10px;color:#888">' + c.time + '</span></div>' +
+          '<div style="font-size:11px;color:#555;margin-top:2px">"' + escapeHtml(c.text) + '"</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // Top clients
+    var topEl = document.getElementById('top-clients');
+    topEl.innerHTML = data.clients.top.map(function(c, i) {
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f5f5f5;font-size:11px">' +
+        '<span>' + (i+1) + '. ' + escapeHtml(c[0]) + '</span><b>' + c[1] + ' msgs</b></div>';
+    }).join('');
+
+    // Ghost clients
+    var ghostEl = document.getElementById('ghost-clients');
+    if (data.clients.ghosts.length === 0) {
+      ghostEl.innerHTML = '<div style="color:#548235;font-size:11px">No ghost clients — everyone is responsive!</div>';
+    } else {
+      ghostEl.innerHTML = data.clients.ghosts.map(function(g) {
+        return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f5f5f5;font-size:11px">' +
+          '<span>' + escapeHtml(g.name) + '</span><span style="color:#c0504d">' + g.days + ' days</span></div>';
+      }).join('');
+    }
+
+  } catch (err) {
+    document.getElementById('analytics-meta').textContent = 'Error: ' + err.message;
+    console.error('Analytics error:', err);
+  }
+}
+
 function escapeHtml(str) {
   var div = document.createElement('div');
   div.textContent = str;
@@ -462,7 +666,8 @@ window.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('lang-toggle').textContent = _lang === 'en' ? 'PT' : 'EN';
 
-  // Load data
+  // Show analytics section and load data
+  document.getElementById('analytics-section').style.display = 'block';
   loadDashboard();
 });
 </script>
