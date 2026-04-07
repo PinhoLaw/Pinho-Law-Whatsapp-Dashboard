@@ -56,7 +56,7 @@ module.exports = async function handler(req, res) {
         ? accountsRes.data.whatsapp_accounts : [];
 
       // Fetch chats (first 5 pages = 250 chats)
-      var allChats = await fetchAllChats(null, 5);
+      var allChats = await fetchAllChats(null, 15);
 
       var totalChats = allChats.length;
       var unread = allChats.filter(function(c) { return !c.read; }).length;
@@ -106,7 +106,7 @@ module.exports = async function handler(req, res) {
     // UNANSWERED — chats needing response
     if (action === 'unanswered') {
       var account = req.query.account || null;
-      var allChats = await fetchAllChats(account, 10);
+      var allChats = await fetchAllChats(account, 15);
 
       // Filter: unread chats with a last message
       var unanswered = allChats.filter(function(c) {
